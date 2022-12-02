@@ -1,6 +1,17 @@
-import * as fs from "fs/promises";
-import * as path from "path";
-
+const aws = {
+  upload:(...opts):UploadResult=>({
+    success: true,
+    message: "Uploaded to AWS storage",
+  }),
+}
+const drive = {
+  files:{
+    create:(...opts):UploadResult=>({
+      success: true,
+      message: "Uploaded to Drive storage",
+    }),
+  }
+}
 interface UploadResult {
   success: boolean;
   message: string;
@@ -14,28 +25,17 @@ interface UploadStrategy {
   ): Promise<UploadResult>;
 }
 
-
-class LocalUpload implements UploadStrategy {
+class DriveUpload implements UploadStrategy {
   public upload(
     filePath: string,
     name: string,
     content: string
   ): Promise<UploadResult> {
     return new Promise((resolve, reject) => {
-      const result: UploadResult = {
-        success: true,
-        message: "Uploaded to local storage",
-      };
 
-      fs.writeFile(path.join(__dirname, filePath, name), content)
-        .then(() => {
-          resolve(result);
-        })
-        .catch((e) => {
-          result.success = false;
-          result.message = "Error uploading to local storage";
-          reject(result);
-        });
+      const result = drive.files.create({filePath,name,content});
+
+      resolve(result);
     });
   }
 }
@@ -47,14 +47,8 @@ class AWSUpload implements UploadStrategy {
     content: string
   ): Promise<UploadResult> {
     return new Promise((resolve, reject) => {
-      const result: UploadResult = {
-        success: true,
-        message: "Uploaded to AWS storage",
-      };
-
-      setTimeout(() => {
-        resolve(result);
-      }, 1000);
+      const result = aws.upload({filePath, name, content});
+      resolve(result);
     });
   }
 }
@@ -79,18 +73,17 @@ class Context {
   }
 }
 
-const localUpload = new LocalUpload();
+const driveUpload = new DriveUpload();
 const awsUpload = new AWSUpload();
 
-const context = new Context(localUpload);
+const context = new Context(driveUpload);
 
 context.fileUpload("/", "Output.txt", "Hello World").then((result) => {
   console.log(result);
 });
 
+context.setStrategy(awsUpload);
 
-context.setStrategy(awsUpload)
-
-context.fileUpload("/", "Output.txt", "Okay!").then((result)=>{
-    console.log(result)
-})
+context.fileUpload("/", "Output.txt", "Okay!").then((result) => {
+  console.log(result);
+});
