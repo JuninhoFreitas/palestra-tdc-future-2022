@@ -10,6 +10,7 @@ interface Builder {
 
 class InstallerBuilder implements Builder {
   private pack: PackPrograms;
+  
   constructor() {
     this.reset();
   }
@@ -103,6 +104,7 @@ class Director {
   public setBuilder(builder: Builder): void {
     this.builder = builder;
   }
+
   public buildMicrosoftPackage(): void {
     this.builder.edge();
     this.builder.teams();
